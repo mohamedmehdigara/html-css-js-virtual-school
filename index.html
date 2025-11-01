@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual School Hub - Direct Access Learning</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for a cleaner academic look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9; /* Light background */
+            transition: background-color 0.3s ease;
+        }
+        .container-card {
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            min-height: 80vh;
+        }
+        .nav-button {
+            transition: all 0.2s ease;
+        }
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+        .text-blue-600 {
+            color: #2563eb;
+        }
+        .border-blue-200 {
+            border-color: #bfdbfe;
+        }
+        /* Hide sections until role is selected */
+        [data-role] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Role Selection Modal / Initial Screen -->
+    <div id="role-selection" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
+            <h2 class="text-3xl font-extrabold text-gray-800 mb-4">Welcome to the Virtual School</h2>
+            <p class="text-gray-600 mb-8">Please identify your role to access the content.</p>
+            <div class="flex flex-col space-y-4">
+                <button onclick="setUserRole('teacher')" class="nav-button bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg text-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                    I am a Teacher
+                </button>
+                <button onclick="setUserRole('student')" class="nav-button bg-green-600 text-white font-semibold py-3 px-6 rounded-lg text-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300">
+                    I am a Student
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <header class="bg-white p-6 rounded-xl container-card mb-8 flex flex-col sm:flex-row justify-between items-center shadow-lg">
+            <h1 class="text-3xl font-bold text-gray-800">Virtual Learning Hub</h1>
+            <div class="mt-4 sm:mt-0 flex items-center space-x-2">
+                <span id="role-display" class="text-lg font-medium text-blue-600 px-3 py-1 bg-blue-50 rounded-full"></span>
+                <button onclick="showRoleSelection()" class="text-sm text-gray-500 hover:text-red-600 transition duration-150">
+                    [Change Role]
+                </button>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Area -->
+        <main class="container-card p-6 rounded-xl">
+
+            <!-- Teacher View (data-role="teacher") -->
+            <section data-role="teacher" class="space-y-6">
+                <h2 class="text-2xl font-bold text-blue-600 border-b pb-2 mb-6">Teacher's Desk: Course Management</h2>
+                
+                <!-- Lesson Editor/View -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="text-xl font-semibold mb-3">Today's Teaching Material: <span id="teacher-lesson-title" class="text-gray-700"></span></h3>
+                    <p id="teacher-lesson-content" class="text-gray-600 whitespace-pre-wrap"></p>
+                    <button onclick="editLesson()" class="mt-4 text-sm bg-indigo-500 text-white px-3 py-1 rounded-full hover:bg-indigo-600">Edit Material</button>
+                </div>
+
+                <!-- Exam Management -->
+                <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                    <h3 class="text-xl font-semibold mb-4 text-red-700">Exam Center</h3>
+                    <div id="exam-stats" class="space-y-2 text-sm text-red-600">
+                        <p>Total Questions: <span id="q-count">0</span></p>
+                        <p>Latest Student Score (Mock): 8/10</p>
+                    </div>
+                    <button onclick="manageExam()" class="mt-4 text-sm bg-red-600 text-white px-3 py-1 rounded-full hover:bg-red-700">Review/Update Exam</button>
+                </div>
+            </section>
+
+            <!-- Student View (data-role="student") -->
+            <section data-role="student" class="space-y-6">
+                <h2 class="text-2xl font-bold text-green-600 border-b pb-2 mb-6">Student Access: Learning Modules</h2>
+
+                <!-- Reading Material -->
+                <div id="learning-material" class="bg-white p-6 rounded-lg border border-green-200 shadow-md">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3" id="student-lesson-title"></h3>
+                    <p class="text-gray-600 leading-relaxed whitespace-pre-wrap" id="student-lesson-content"></p>
+                </div>
+
+                <!-- Exam Area -->
+                <div id="exam-area" class="mt-8 bg-yellow-50 p-6 rounded-lg border border-yellow-300 shadow-md">
+                    <h3 class="text-xl font-bold text-yellow-800 mb-4">Take Your Exam</h3>
+                    <div id="quiz-container">
+                        <!-- Quiz content loaded by JS -->
+                        <p class="text-gray-500">Click below to start the exam!</p>
+                        <button id="start-quiz-btn" onclick="startQuiz()" class="mt-4 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700 transition duration-150">
+                            Start Exam (10 Questions)
+                        </button>
+                    </div>
+                    <div id="quiz-result" class="hidden mt-4 text-center"></div>
+                </div>
+            </section>
+
+            <!-- Lesson/Exam Editor Modal (for Teacher) -->
+            <div id="editor-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden items-center justify-center p-4">
+                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+                    <h3 class="text-2xl font-bold mb-4" id="modal-title"></h3>
+                    <div id="modal-content-area" class="space-y-4">
+                        <!-- Content depends on editLesson or manageExam -->
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button onclick="closeModal()" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400">
+                            Close
+                        </button>
+                        <button id="modal-save-btn" onclick="saveModalContent()" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
+                            Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // Global variables and mock data
+        let userRole = '';
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        const courseContent = {
+            title: "Fundamentals of Data Structures",
+            content: `
+Unit 1: Introduction to Arrays
+An array is a collection of items stored at contiguous memory locations. The idea is to store multiple items of the same type together. This allows calculating the address of each element based on its index and the base address.
+
+Unit 2: Linked Lists
+A linked list is a linear data structure, in which the elements are not stored at contiguous memory locations. The elements in a linked list are linked using pointers. Each element (node) is composed of data and a reference (link) to the next node in the sequence.
+
+Unit 3: Stacks and Queues
+Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, First Out (LIFO) principle, while a Queue follows the First In, First Out (FIFO) principle. They are fundamental in managing function calls and process scheduling.
+            `.trim()
+        };
+
+        const examData = [
+            {
+                question: "What principle does a Stack data structure follow?",
+                options: ["FIFO (First In, First Out)", "LIFO (Last In, First Out)", "FILO (First In, Last Out)", "Random Access"],
+                answer: 1,
+            },
+            {
+                question: "Elements in an Array are stored at what type of memory locations?",
+                options: ["Random", "Contiguous", "Distributed", "Indexed"],
+                answer: 1,
+            },
+            {
+                question: "What links nodes together in a Linked List?",
+                options: ["Indexes", "Pointers (References)", "Contiguous Memory", "Hashing"],
+                answer: 1,
+            },
+            {
+                question: "Which data structure is typically used for managing function call history (call stack)?",
+                options: ["Queue", "Hash Table", "Stack", "Binary Tree"],
+                answer: 2,
+            },
+            {
+                question: "What is the primary characteristic of a Queue?",
+                options: ["LIFO", "Random Access", "FIFO", "Sorting"],
+                answer: 2,
+            },
+            {
+                question: "In computer science, what is an ADT?",
+                options: ["Abstract Data Type", "Active Data Table", "Array Definition Tool", "Application Data Target"],
+                answer: 0,
+            },
+            {
+                question: "Accessing an element by its index in an array is typically an O(1) operation. What does O(1) refer to?",
+                options: ["Worst-case complexity", "Average-case complexity", "Constant time complexity", "Logarithmic time complexity"],
+                answer: 2,
+            },
+            {
+                question: "What is a disadvantage of an Array compared to a Linked List?",
+                options: ["Faster search time", "Easier to implement", "Fixed size", "Better cache locality"],
+                answer: 2,
+            },
+            {
+                question: "Which of these is NOT a linear data structure?",
+                options: ["Array", "Queue", "Binary Search Tree", "Stack"],
+                answer: 2,
+            },
+            {
+                question: "The 'head' and 'tail' terms are most commonly associated with which structure?",
+                options: ["Stack", "Linked List or Queue", "Array", "Graph"],
+                answer: 1,
+            },
+        ];
+
+        // --- Core Application Logic ---
+
+        // Function to set the user role and update the UI
+        function setUserRole(role) {
+            userRole = role;
+            document.getElementById('role-selection').classList.add('hidden');
+            document.getElementById('role-display').textContent = role.toUpperCase();
+
+            // Hide all role-specific sections
+            document.querySelectorAll('[data-role]').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            // Show the current role's section
+            const activeSection = document.querySelector(`[data-role="${role}"]`);
+            if (activeSection) {
+                activeSection.style.display = 'block';
+            }
+
+            // Load specific content based on role
+            if (role === 'student') {
+                loadStudentView();
+            } else if (role === 'teacher') {
+                loadTeacherView();
+            }
+        }
+
+        function showRoleSelection() {
+            document.getElementById('role-selection').classList.remove('hidden');
+        }
+
+        // --- Student Functionality ---
+
+        function loadStudentView() {
+            // Load Learning Material
+            document.getElementById('student-lesson-title').textContent = courseContent.title;
+            document.getElementById('student-lesson-content').textContent = courseContent.content;
+
+            // Update Exam area for student
+            document.getElementById('q-count').textContent = examData.length;
+            document.getElementById('start-quiz-btn').textContent = `Start Exam (${examData.length} Questions)`;
+            resetQuiz();
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('quiz-result').classList.add('hidden');
+            document.getElementById('quiz-container').innerHTML = `
+                <p class="text-gray-500">Ready to test your knowledge?</p>
+                <button id="start-quiz-btn" onclick="startQuiz()" class="mt-4 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700 transition duration-150">
+                    Start Exam (${examData.length} Questions)
+                </button>
+            `;
+        }
+
+        function startQuiz() {
+            document.getElementById('quiz-result').classList.add('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const container = document.getElementById('quiz-container');
+            if (currentQuestionIndex >= examData.length) {
+                showResults();
+                return;
+            }
+
+            const qData = examData[currentQuestionIndex];
+            let html = `
+                <h4 class="text-lg font-semibold mb-4">Question ${currentQuestionIndex + 1} of ${examData.length}</h4>
+                <p class="mb-4 text-gray-700">${qData.question}</p>
+                <div class="space-y-3" id="options-container">
+            `;
+
+            qData.options.forEach((option, index) => {
+                html += `
+                    <button onclick="submitAnswer(${index})"
+                            class="w-full text-left p-3 border border-gray-300 rounded-lg hover:bg-yellow-200 transition duration-150 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        ${String.fromCharCode(65 + index)}. ${option}
+                    </button>
+                `;
+            });
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function submitAnswer(selectedIndex) {
+            const qData = examData[currentQuestionIndex];
+            const optionsContainer = document.getElementById('options-container');
+
+            // Disable buttons after selection
+            optionsContainer.querySelectorAll('button').forEach((btn, index) => {
+                btn.disabled = true;
+                if (index === qData.answer) {
+                    btn.classList.remove('bg-white', 'hover:bg-yellow-200');
+                    btn.classList.add('bg-green-300', 'font-bold'); // Correct Answer
+                } else if (index === selectedIndex) {
+                    btn.classList.remove('bg-white', 'hover:bg-yellow-200');
+                    btn.classList.add('bg-red-300', 'font-bold'); // Wrong Selection
+                }
+            });
+
+            if (selectedIndex === qData.answer) {
+                score++;
+            }
+
+            // Wait a moment then load next question
+            setTimeout(() => {
+                currentQuestionIndex++;
+                displayQuestion();
+            }, 1500);
+        }
+
+        function showResults() {
+            const container = document.getElementById('quiz-container');
+            const resultArea = document.getElementById('quiz-result');
+            const percentage = ((score / examData.length) * 100).toFixed(1);
+
+            let message = '';
+            let color = 'text-green-600';
+            if (percentage >= 80) {
+                message = 'Excellent work!';
+            } else if (percentage >= 60) {
+                message = 'Good job, but there is room for improvement.';
+                color = 'text-yellow-600';
+            } else {
+                message = 'Needs significant review of the material.';
+                color = 'text-red-600';
+            }
+
+            resultArea.innerHTML = `
+                <p class="text-xl font-bold ${color}">${message}</p>
+                <p class="text-2xl font-extrabold text-gray-800 mt-2">Score: ${score} / ${examData.length} (${percentage}%)</p>
+                <button onclick="resetQuiz()" class="mt-6 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-150">
+                    Review and Try Again
+                </button>
+            `;
+            container.innerHTML = '';
+            resultArea.classList.remove('hidden');
+        }
+
+        // --- Teacher Functionality ---
+
+        function loadTeacherView() {
+            document.getElementById('teacher-lesson-title').textContent = courseContent.title;
+            document.getElementById('teacher-lesson-content').textContent = courseContent.content;
+            document.getElementById('q-count').textContent = examData.length;
+        }
+
+        function editLesson() {
+            document.getElementById('modal-title').textContent = 'Edit Course Material';
+            document.getElementById('modal-save-btn').onclick = saveLessonContent;
+
+            document.getElementById('modal-content-area').innerHTML = `
+                <label for="lesson-title-input" class="block text-sm font-medium text-gray-700">Course Title</label>
+                <input type="text" id="lesson-title-input" value="${courseContent.title}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+
+                <label for="lesson-content-input" class="block text-sm font-medium text-gray-700">Content (Markdown/Text)</label>
+                <textarea id="lesson-content-input" rows="15" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">${courseContent.content}</textarea>
+            `;
+            document.getElementById('editor-modal').classList.remove('hidden');
+            document.getElementById('editor-modal').classList.add('flex');
+        }
+
+        function saveLessonContent() {
+            courseContent.title = document.getElementById('lesson-title-input').value;
+            courseContent.content = document.getElementById('lesson-content-input').value;
+            loadTeacherView(); // Refresh teacher view
+            closeModal();
+        }
+
+        function manageExam() {
+            document.getElementById('modal-title').textContent = 'Manage Exam Questions';
+            document.getElementById('modal-save-btn').onclick = saveExamData;
+
+            let html = '<p class="text-sm text-gray-600 mb-4">Edit questions and options. The correct answer index (0, 1, 2, or 3) should be entered in the box.</p>';
+            examData.forEach((q, qIndex) => {
+                html += `
+                    <div class="p-3 border border-red-300 rounded-lg bg-white shadow-sm mb-4">
+                        <label class="block text-sm font-semibold text-red-700">Q${qIndex + 1} Question</label>
+                        <textarea id="q-${qIndex}-text" rows="2" class="mt-1 block w-full rounded-md border-gray-300 p-2 border">${q.question}</textarea>
+
+                        <div class="mt-2 grid grid-cols-2 gap-2">
+                            ${q.options.map((opt, oIndex) => `
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600">Option ${oIndex + 1}</label>
+                                    <input type="text" id="q-${qIndex}-opt-${oIndex}" value="${opt}" class="w-full rounded-md border-gray-300 p-1 border text-sm">
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <label class="block text-sm font-semibold text-green-700 mt-3">Correct Answer Index (0-3)</label>
+                        <input type="number" id="q-${qIndex}-answer" value="${q.answer}" min="0" max="3" class="w-20 rounded-md border-green-300 p-1 border font-bold text-lg">
+                    </div>
+                `;
+            });
+
+            document.getElementById('modal-content-area').innerHTML = html;
+            document.getElementById('editor-modal').classList.remove('hidden');
+            document.getElementById('editor-modal').classList.add('flex');
+        }
+
+        function saveExamData() {
+            // This is a simplified function and relies on the number of questions not changing
+            // and the inputs being valid (Teacher's responsibility).
+            examData.forEach((q, qIndex) => {
+                q.question = document.getElementById(`q-${qIndex}-text`).value;
+                q.options[0] = document.getElementById(`q-${qIndex}-opt-0`).value;
+                q.options[1] = document.getElementById(`q-${qIndex}-opt-1`).value;
+                q.options[2] = document.getElementById(`q-${qIndex}-opt-2`).value;
+                q.options[3] = document.getElementById(`q-${qIndex}-opt-3`).value;
+                q.answer = parseInt(document.getElementById(`q-${qIndex}-answer`).value);
+            });
+            loadTeacherView();
+            closeModal();
+        }
+
+
+        // --- Utility ---
+
+        function closeModal() {
+            document.getElementById('editor-modal').classList.add('hidden');
+            document.getElementById('editor-modal').classList.remove('flex');
+        }
+
+        // Initial setup on load
+        window.onload = function() {
+            // Check if a role was already set (e.g., if user refreshes)
+            // For a single-session, non-db app, we default to showing the selection
+            showRoleSelection();
+        };
+
+    </script>
+</body>
+</html>
