@@ -11,12 +11,13 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f4f7f9; /* Light background */
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .container-card {
             background-color: #ffffff;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
             min-height: 80vh;
+            transition: background-color 0.3s ease;
         }
         .nav-button {
             transition: all 0.2s ease;
@@ -31,17 +32,44 @@
         .border-blue-200 {
             border-color: #bfdbfe;
         }
+        /* Dark Mode Specific Styles */
+        body.dark {
+            background-color: #1f2937; /* Dark Gray background */
+            color: #e5e7eb; /* Light text */
+        }
+        body.dark .container-card,
+        body.dark .bg-white {
+            background-color: #374151; /* Slightly lighter dark card */
+        }
+        body.dark .text-gray-800 {
+            color: #f9fafb; /* White text */
+        }
+        body.dark .text-gray-600 {
+            color: #d1d5db; /* Light gray text */
+        }
+        body.dark .border-gray-200 {
+            border-color: #4b5563;
+        }
+        body.dark .bg-gray-50 {
+            background-color: #4b5563;
+        }
+        body.dark .bg-gray-100 {
+            background-color: #4b5563;
+        }
         /* Hide sections until role is selected */
         [data-role] {
             display: none;
         }
     </style>
 </head>
-<body>
+<body onscroll="updateScrollProgress()">
+
+    <!-- Scroll Progress Indicator -->
+    <div id="progress-bar" class="fixed top-0 left-0 h-1 bg-green-500 z-50 transition-all duration-100 ease-out" style="width: 0%;"></div>
 
     <!-- Role Selection Modal / Initial Screen -->
     <div id="role-selection" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center container-card">
             <h2 class="text-3xl font-extrabold text-gray-800 mb-4">Welcome to the Virtual School</h2>
             <p class="text-gray-600 mb-8">Please identify your role to access the content.</p>
             <div class="flex flex-col space-y-4">
@@ -57,74 +85,127 @@
 
     <!-- Main Application Container -->
     <div id="app-container" class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <header class="bg-white p-6 rounded-xl container-card mb-8 flex flex-col sm:flex-row justify-between items-center shadow-lg">
+        <header class="bg-white p-6 rounded-xl container-card mb-4 flex flex-col sm:flex-row justify-between items-center shadow-lg">
             <h1 class="text-3xl font-bold text-gray-800">Virtual Learning Hub</h1>
-            <div class="mt-4 sm:mt-0 flex items-center space-x-2">
-                <span id="role-display" class="text-lg font-medium text-blue-600 px-3 py-1 bg-blue-50 rounded-full"></span>
-                <button onclick="showRoleSelection()" class="text-sm text-gray-500 hover:text-red-600 transition duration-150">
+            <div class="mt-4 sm:mt-0 flex items-center space-x-4">
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" id="dark-mode-toggle" class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 transition duration-150" title="Toggle Dark Mode">
+                    <!-- Moon Icon (Initial State: Light Mode) -->
+                    <svg id="moon-icon" class="w-6 h-6 text-gray-700 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
+                
+                <span id="role-display" class="text-lg font-medium text-blue-600 px-3 py-1 bg-blue-50 rounded-full dark:bg-blue-900 dark:text-blue-300"></span>
+                <button onclick="showRoleSelection()" class="text-sm text-gray-500 hover:text-red-600 transition duration-150 dark:text-gray-400 dark:hover:text-red-400">
                     [Change Role]
                 </button>
             </div>
         </header>
+
+        <!-- Live Announcement Banner -->
+        <div class="bg-indigo-100 border-l-4 border-indigo-500 text-indigo-800 p-4 mb-8 rounded-lg shadow-md dark:bg-indigo-900 dark:border-indigo-400 dark:text-indigo-200">
+            <div class="flex items-center">
+                <!-- Icon for Announcement -->
+                <svg class="h-6 w-6 mr-3 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882l-4.159 4.16a2 2 0 00-1.127 1.776V19a2 2 0 002 2h10a2 2 0 002-2v-7.182a2 2 0 00-1.127-1.776l-4.159-4.16a2 2 0 00-2.688 0z" />
+                </svg>
+                <p class="font-medium">Announcement: <span id="announcement-display" class="font-normal"></span></p>
+            </div>
+        </div>
+        
+        <!-- Session Activity Log (Visible to all) -->
+        <div class="bg-gray-800 p-4 mb-8 rounded-lg shadow-inner">
+            <h3 class="text-xs font-semibold text-gray-200 uppercase tracking-wider mb-2">In-Session Activity Log (Non-Persistent)</h3>
+            <div id="activity-log" class="text-xs text-gray-400 max-h-24 overflow-y-auto space-y-1">
+                <!-- Log messages appear here -->
+            </div>
+        </div>
 
         <!-- Dynamic Content Area -->
         <main class="container-card p-6 rounded-xl">
 
             <!-- Teacher View (data-role="teacher") -->
             <section data-role="teacher" class="space-y-6">
-                <h2 class="text-2xl font-bold text-blue-600 border-b pb-2 mb-6">Teacher's Desk: Course Management</h2>
+                <h2 class="text-2xl font-bold text-blue-600 border-b pb-2 mb-6 dark:text-blue-400 dark:border-gray-600">Teacher's Desk: Course Management</h2>
                 
                 <!-- Lesson Editor/View -->
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 class="text-xl font-semibold mb-3">Today's Teaching Material: <span id="teacher-lesson-title" class="text-gray-700"></span></h3>
-                    <p id="teacher-lesson-content" class="text-gray-600 whitespace-pre-wrap"></p>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                    <h3 class="text-xl font-semibold mb-3">Today's Teaching Material: <span id="teacher-lesson-title" class="text-gray-700 dark:text-gray-200"></span></h3>
+                    <p id="teacher-lesson-content" class="text-gray-600 whitespace-pre-wrap dark:text-gray-300"></p>
                     <button onclick="editLesson()" class="mt-4 text-sm bg-indigo-500 text-white px-3 py-1 rounded-full hover:bg-indigo-600">Edit Material</button>
                 </div>
 
-                <!-- Exam Management -->
-                <div class="bg-red-50 p-4 rounded-lg border border-red-200">
-                    <h3 class="text-xl font-semibold mb-4 text-red-700">Exam Center</h3>
-                    <div id="exam-stats" class="space-y-2 text-sm text-red-600">
-                        <p>Total Questions: <span id="q-count">0</span></p>
-                        <p>Latest Student Score (Mock): 8/10</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Exam Management -->
+                    <div class="bg-red-50 p-4 rounded-lg border border-red-200 dark:bg-red-900 dark:border-red-600">
+                        <h3 class="text-xl font-semibold mb-4 text-red-700 dark:text-red-400">Exam Center</h3>
+                        <div id="exam-stats" class="space-y-2 text-sm text-red-600 dark:text-red-300">
+                            <p>Total Questions: <span id="q-count">0</span></p>
+                            <p>Latest Student Score (Mock): 8/10</p>
+                        </div>
+                        <button onclick="manageExam()" class="mt-4 text-sm bg-red-600 text-white px-3 py-1 rounded-full hover:bg-red-700">Review/Update Exam</button>
                     </div>
-                    <button onclick="manageExam()" class="mt-4 text-sm bg-red-600 text-white px-3 py-1 rounded-full hover:bg-red-700">Review/Update Exam</button>
+
+                    <!-- Announcement Management (Includes Mock Sentiment Analysis) -->
+                    <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200 dark:bg-indigo-900 dark:border-indigo-600">
+                        <h3 class="text-xl font-semibold mb-4 text-indigo-700 dark:text-indigo-400">Live Communication</h3>
+                        <p class="text-sm text-indigo-600 dark:text-indigo-300">Update the real-time announcement visible to all users.</p>
+                        <button onclick="manageAnnouncements()" class="mt-4 text-sm bg-indigo-600 text-white px-3 py-1 rounded-full hover:bg-indigo-700">Update Announcement</button>
+                    </div>
                 </div>
             </section>
 
             <!-- Student View (data-role="student") -->
             <section data-role="student" class="space-y-6">
-                <h2 class="text-2xl font-bold text-green-600 border-b pb-2 mb-6">Student Access: Learning Modules</h2>
+                <h2 class="text-2xl font-bold text-green-600 border-b pb-2 mb-6 dark:text-green-400 dark:border-gray-600">Student Access: Learning Modules</h2>
 
-                <!-- Reading Material -->
-                <div id="learning-material" class="bg-white p-6 rounded-lg border border-green-200 shadow-md">
-                    <h3 class="text-xl font-bold text-gray-800 mb-3" id="student-lesson-title"></h3>
-                    <p class="text-gray-600 leading-relaxed whitespace-pre-wrap" id="student-lesson-content"></p>
+                <!-- Text Accessibility Controls -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 bg-gray-100 p-3 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+                    <!-- Font Size Controls -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Reading Size:</span>
+                        <button onclick="changeTextSize(-2)" class="text-sm bg-gray-300 text-gray-800 px-3 py-1 rounded-full hover:bg-gray-400 font-bold dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">-A</button>
+                        <span id="current-font-size" class="text-base font-bold text-gray-800 dark:text-white">16px</span>
+                        <button onclick="changeTextSize(2)" class="text-lg bg-gray-300 text-gray-800 px-3 py-1 rounded-full hover:bg-gray-400 font-bold dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">+A</button>
+                    </div>
+                </div>
+                
+                <!-- Reading Material (Full width now) -->
+                <div id="learning-material" class="bg-white p-6 rounded-lg border border-green-200 shadow-md container-card">
+                    <h3 class="text-xl font-bold text-gray-800 mb-3 dark:text-white" id="student-lesson-title"></h3>
+                    <p class="text-gray-600 leading-relaxed whitespace-pre-wrap dark:text-gray-300" id="student-lesson-content"></p>
                 </div>
 
                 <!-- Exam Area -->
-                <div id="exam-area" class="mt-8 bg-yellow-50 p-6 rounded-lg border border-yellow-300 shadow-md">
-                    <h3 class="text-xl font-bold text-yellow-800 mb-4">Take Your Exam</h3>
+                <div id="exam-area" class="mt-8 bg-yellow-50 p-6 rounded-lg border border-yellow-300 shadow-md dark:bg-yellow-900 dark:border-yellow-600">
+                    <h3 class="text-xl font-bold text-yellow-800 mb-4 dark:text-yellow-300">Take Your Exam</h3>
                     <div id="quiz-container">
                         <!-- Quiz content loaded by JS -->
-                        <p class="text-gray-500">Click below to start the exam!</p>
+                        <p class="text-gray-500 dark:text-gray-400">Click below to start the exam!</p>
                         <button id="start-quiz-btn" onclick="startQuiz()" class="mt-4 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700 transition duration-150">
                             Start Exam (10 Questions)
                         </button>
                     </div>
                     <div id="quiz-result" class="hidden mt-4 text-center"></div>
                 </div>
+
+                <!-- In-Session Notes Pad -->
+                <div id="notes-area" class="mt-8 bg-blue-50 p-6 rounded-lg border border-blue-300 shadow-md dark:bg-blue-900 dark:border-blue-600">
+                    <h3 class="text-xl font-bold text-blue-800 mb-4 dark:text-blue-300">In-Session Notes Pad</h3>
+                    <p class="text-sm text-red-600 mb-3 font-medium dark:text-red-400">⚠️ Important: These notes are temporary and will be lost when you refresh the page.</p>
+                    <textarea id="student-notes-input" rows="8" placeholder="Jot down key concepts, questions, or summaries here..." 
+                              class="w-full rounded-md border-blue-300 p-3 border focus:ring-blue-500 focus:border-blue-500 text-gray-700 dark:bg-gray-700 dark:border-blue-500 dark:text-white"></textarea>
+                </div>
             </section>
 
             <!-- Lesson/Exam Editor Modal (for Teacher) -->
             <div id="editor-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden items-center justify-center p-4">
-                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+                <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl container-card">
                     <h3 class="text-2xl font-bold mb-4" id="modal-title"></h3>
                     <div id="modal-content-area" class="space-y-4">
-                        <!-- Content depends on editLesson or manageExam -->
+                        <!-- Content depends on editLesson, manageExam, or manageAnnouncements -->
                     </div>
                     <div class="flex justify-end space-x-3 mt-6">
-                        <button onclick="closeModal()" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400">
+                        <button onclick="closeModal()" class="bg-gray-300 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-400 dark:bg-gray-600 dark:text-white dark:hover:bg-gray-500">
                             Close
                         </button>
                         <button id="modal-save-btn" onclick="saveModalContent()" class="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700">
@@ -142,6 +223,12 @@
         let userRole = '';
         let currentQuestionIndex = 0;
         let score = 0;
+
+        // Functionality State
+        let currentFontSize = 16;
+        let studentNoteContent = ""; // In-memory note storage for the session
+        let currentAnnouncement = "Welcome back! Please review Unit 1 before the quiz on Friday.";
+        
 
         const courseContent = {
             title: "Fundamentals of Data Structures",
@@ -212,12 +299,30 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
 
         // --- Core Application Logic ---
 
+        // Activity Logger
+        function logActivity(message) {
+            const logElement = document.getElementById('activity-log');
+            const now = new Date();
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            
+            const newEntry = document.createElement('div');
+            newEntry.className = 'text-xs text-gray-400';
+            newEntry.innerHTML = `<span class="font-mono text-gray-500">[${timeString}]</span> ${message}`;
+            
+            logElement.prepend(newEntry);
+            
+            // Keep log size reasonable (e.g., max 20 entries)
+            while (logElement.children.length > 20) {
+                logElement.removeChild(logElement.lastChild);
+            }
+        }
+
         // Function to set the user role and update the UI
         function setUserRole(role) {
             userRole = role;
             document.getElementById('role-selection').classList.add('hidden');
             document.getElementById('role-display').textContent = role.toUpperCase();
-
+            
             // Hide all role-specific sections
             document.querySelectorAll('[data-role]').forEach(el => {
                 el.style.display = 'none';
@@ -232,38 +337,130 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
             // Load specific content based on role
             if (role === 'student') {
                 loadStudentView();
+                logActivity("Role set to Student. Accessing learning materials.");
             } else if (role === 'teacher') {
                 loadTeacherView();
+                logActivity("Role set to Teacher. Accessing management tools.");
             }
+            
+            // Update shared announcement
+            updateAnnouncementDisplay();
+            // Update progress bar visibility based on role
+            updateScrollProgress();
         }
 
         function showRoleSelection() {
             document.getElementById('role-selection').classList.remove('hidden');
+            logActivity("User prompted to change role.");
         }
 
+        // --- Shared Functionality ---
+
+        function updateAnnouncementDisplay() {
+            document.getElementById('announcement-display').textContent = currentAnnouncement;
+        }
+
+        function closeModal() {
+            document.getElementById('editor-modal').classList.add('hidden');
+            document.getElementById('editor-modal').classList.remove('flex');
+            logActivity("Modal closed.");
+        }
+        
+        // Dark Mode Toggle
+        function toggleDarkMode() {
+            const body = document.body;
+            body.classList.toggle('dark');
+            const isDark = body.classList.contains('dark');
+            
+            const toggleButton = document.getElementById('dark-mode-toggle');
+            toggleButton.title = isDark ? "Toggle Light Mode" : "Toggle Dark Mode";
+            logActivity(`Dark Mode toggled: ${isDark ? 'ON' : 'OFF'}.`);
+        }
+        
+        // Scroll Progress Indicator Logic
+        function updateScrollProgress() {
+            const progressElement = document.getElementById('progress-bar');
+            
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            
+            let scrollPercent = 0;
+            if (scrollHeight > 0) {
+                scrollPercent = (scrollTop / scrollHeight) * 100;
+            }
+
+            progressElement.style.width = scrollPercent + "%";
+            
+            // Only visible for student
+            if (userRole === 'student' && scrollHeight > 0) {
+                progressElement.style.display = 'block';
+            } else {
+                progressElement.style.display = 'none';
+            }
+        }
+
+
         // --- Student Functionality ---
+        
+        function updateNoteContent() {
+            studentNoteContent = document.getElementById('student-notes-input').value;
+            // No log needed for every character input
+        }
+
+        function changeTextSize(delta) {
+            const newSize = currentFontSize + delta;
+            
+            if (newSize >= 12 && newSize <= 24) {
+                currentFontSize = newSize;
+                
+                const contentElement = document.getElementById('student-lesson-content');
+                const sizeDisplayElement = document.getElementById('current-font-size');
+
+                if (contentElement) {
+                    contentElement.style.fontSize = `${currentFontSize}px`;
+                }
+                if (sizeDisplayElement) {
+                    sizeDisplayElement.textContent = `${currentFontSize}px`;
+                }
+                logActivity(`Font size changed to ${currentFontSize}px.`);
+            }
+        }
 
         function loadStudentView() {
             // Load Learning Material
             document.getElementById('student-lesson-title').textContent = courseContent.title;
             document.getElementById('student-lesson-content').textContent = courseContent.content;
+            
+            // Apply current font size to learning material
+            document.getElementById('student-lesson-content').style.fontSize = `${currentFontSize}px`;
+            document.getElementById('current-font-size').textContent = `${currentFontSize}px`;
 
+            // Load in-session note content
+            const notesInput = document.getElementById('student-notes-input');
+            if (notesInput) {
+                notesInput.value = studentNoteContent;
+                notesInput.removeEventListener('input', updateNoteContent);
+                notesInput.addEventListener('input', updateNoteContent);
+            }
+            
             // Update Exam area for student
             document.getElementById('q-count').textContent = examData.length;
             document.getElementById('start-quiz-btn').textContent = `Start Exam (${examData.length} Questions)`;
             resetQuiz();
         }
 
+        // Quiz Functions 
         function resetQuiz() {
             currentQuestionIndex = 0;
             score = 0;
             document.getElementById('quiz-result').classList.add('hidden');
             document.getElementById('quiz-container').innerHTML = `
-                <p class="text-gray-500">Ready to test your knowledge?</p>
+                <p class="text-gray-500 dark:text-gray-400">Ready to test your knowledge?</p>
                 <button id="start-quiz-btn" onclick="startQuiz()" class="mt-4 bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-yellow-700 transition duration-150">
                     Start Exam (${examData.length} Questions)
                 </button>
             `;
+            logActivity("Quiz state reset.");
         }
 
         function startQuiz() {
@@ -271,6 +468,7 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
             currentQuestionIndex = 0;
             score = 0;
             displayQuestion();
+            logActivity("Quiz started.");
         }
 
         function displayQuestion() {
@@ -282,15 +480,15 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
 
             const qData = examData[currentQuestionIndex];
             let html = `
-                <h4 class="text-lg font-semibold mb-4">Question ${currentQuestionIndex + 1} of ${examData.length}</h4>
-                <p class="mb-4 text-gray-700">${qData.question}</p>
+                <h4 class="text-lg font-semibold mb-4 dark:text-white">Question ${currentQuestionIndex + 1} of ${examData.length}</h4>
+                <p class="mb-4 text-gray-700 dark:text-gray-200">${qData.question}</p>
                 <div class="space-y-3" id="options-container">
             `;
 
             qData.options.forEach((option, index) => {
                 html += `
                     <button onclick="submitAnswer(${index})"
-                            class="w-full text-left p-3 border border-gray-300 rounded-lg hover:bg-yellow-200 transition duration-150 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            class="w-full text-left p-3 border border-gray-300 rounded-lg hover:bg-yellow-200 transition duration-150 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-yellow-800">
                         ${String.fromCharCode(65 + index)}. ${option}
                     </button>
                 `;
@@ -308,10 +506,10 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
             optionsContainer.querySelectorAll('button').forEach((btn, index) => {
                 btn.disabled = true;
                 if (index === qData.answer) {
-                    btn.classList.remove('bg-white', 'hover:bg-yellow-200');
+                    btn.classList.remove('bg-white', 'hover:bg-yellow-200', 'dark:bg-gray-700', 'dark:hover:bg-yellow-800');
                     btn.classList.add('bg-green-300', 'font-bold'); // Correct Answer
                 } else if (index === selectedIndex) {
-                    btn.classList.remove('bg-white', 'hover:bg-yellow-200');
+                    btn.classList.remove('bg-white', 'hover:bg-yellow-200', 'dark:bg-gray-700', 'dark:hover:bg-yellow-800');
                     btn.classList.add('bg-red-300', 'font-bold'); // Wrong Selection
                 }
             });
@@ -319,6 +517,8 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
             if (selectedIndex === qData.answer) {
                 score++;
             }
+            logActivity(`Quiz question ${currentQuestionIndex + 1} answered. Correct: ${selectedIndex === qData.answer}.`);
+
 
             // Wait a moment then load next question
             setTimeout(() => {
@@ -346,16 +546,40 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
 
             resultArea.innerHTML = `
                 <p class="text-xl font-bold ${color}">${message}</p>
-                <p class="text-2xl font-extrabold text-gray-800 mt-2">Score: ${score} / ${examData.length} (${percentage}%)</p>
+                <p class="text-2xl font-extrabold text-gray-800 mt-2 dark:text-white">Score: ${score} / ${examData.length} (${percentage}%)</p>
                 <button onclick="resetQuiz()" class="mt-6 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-150">
                     Review and Try Again
                 </button>
             `;
             container.innerHTML = '';
             resultArea.classList.remove('hidden');
+            logActivity(`Quiz finished. Score: ${score}/${examData.length}.`);
         }
 
         // --- Teacher Functionality ---
+        
+        // Mock Sentiment Analyzer (for Announcements)
+        function analyzeSentiment(text) {
+            text = text.toLowerCase();
+            let score = 0;
+            
+            // Simple Keyword scoring (non-persistent, mock analysis)
+            const positiveWords = ['great', 'excellent', 'fantastic', 'good', 'success', 'reminder', 'important', 'happy', 'check'];
+            const negativeWords = ['failure', 'warning', 'urgent', 'disappointing', 'bad', 'problem', 'error', 'late', 'must'];
+
+            positiveWords.forEach(word => {
+                if (text.includes(word)) score += 1;
+            });
+            
+            negativeWords.forEach(word => {
+                if (text.includes(word)) score -= 1;
+            });
+
+            if (score > 0) return { label: 'Positive', color: 'text-green-600', bg: 'bg-green-100', border: 'border-green-300' };
+            if (score < 0) return { label: 'Negative', color: 'text-red-600', bg: 'bg-red-100', border: 'border-red-300' };
+            return { label: 'Neutral', color: 'text-gray-600', bg: 'bg-gray-200', border: 'border-gray-300' };
+        }
+
 
         function loadTeacherView() {
             document.getElementById('teacher-lesson-title').textContent = courseContent.title;
@@ -368,45 +592,101 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
             document.getElementById('modal-save-btn').onclick = saveLessonContent;
 
             document.getElementById('modal-content-area').innerHTML = `
-                <label for="lesson-title-input" class="block text-sm font-medium text-gray-700">Course Title</label>
-                <input type="text" id="lesson-title-input" value="${courseContent.title}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                <label for="lesson-title-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Course Title</label>
+                <input type="text" id="lesson-title-input" value="${courseContent.title}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white">
 
-                <label for="lesson-content-input" class="block text-sm font-medium text-gray-700">Content (Markdown/Text)</label>
-                <textarea id="lesson-content-input" rows="15" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">${courseContent.content}</textarea>
+                <label for="lesson-content-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Content (Markdown/Text)</label>
+                <textarea id="lesson-content-input" rows="15" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white">${courseContent.content}</textarea>
             `;
             document.getElementById('editor-modal').classList.remove('hidden');
             document.getElementById('editor-modal').classList.add('flex');
+            logActivity("Teacher editing lesson content.");
         }
 
         function saveLessonContent() {
             courseContent.title = document.getElementById('lesson-title-input').value;
             courseContent.content = document.getElementById('lesson-content-input').value;
             loadTeacherView(); // Refresh teacher view
+            // Refresh student view elements
+            if (userRole === 'student') {
+                 loadStudentView();
+            }
             closeModal();
+            logActivity("Lesson content saved in-session.");
         }
+        
+        function manageAnnouncements() {
+            document.getElementById('modal-title').textContent = 'Live Announcements Editor';
+            document.getElementById('modal-save-btn').onclick = saveAnnouncement;
+
+            document.getElementById('modal-content-area').innerHTML = `
+                <label for="announcement-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200">New Live Announcement</label>
+                <textarea id="announcement-input" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border dark:bg-gray-700 dark:border-gray-600 dark:text-white">${currentAnnouncement}</textarea>
+                
+                <!-- Mock Sentiment Feedback Block -->
+                <div id="sentiment-feedback" class="p-3 mt-3 rounded-lg border border-dashed transition duration-300 dark:border-gray-600">
+                    <h4 class="text-sm font-semibold mb-1 text-gray-700 dark:text-gray-200">Tone Checker (Mock Analysis):</h4>
+                    <span id="sentiment-result" class="text-md font-bold">Type to analyze...</span>
+                </div>
+                
+                <p class="text-xs text-gray-500 mt-3 dark:text-gray-400">This announcement will be visible to all users immediately. It is not permanently stored.</p>
+            `;
+            
+            // Set up live analysis on input
+            const inputElement = document.getElementById('announcement-input');
+            const resultElement = document.getElementById('sentiment-result');
+            const feedbackDiv = document.getElementById('sentiment-feedback');
+
+            function updateSentiment() {
+                const text = inputElement.value;
+                const analysis = analyzeSentiment(text);
+                
+                // Reset classes for dynamic styling
+                feedbackDiv.className = 'p-3 mt-3 rounded-lg border border-dashed transition duration-300 dark:border-gray-600';
+                feedbackDiv.classList.add(analysis.bg, analysis.border);
+
+                resultElement.textContent = analysis.label;
+                resultElement.className = `text-md font-bold ${analysis.color}`;
+            }
+
+            inputElement.addEventListener('input', updateSentiment);
+            updateSentiment(); // Run initial analysis based on current text
+
+            document.getElementById('editor-modal').classList.remove('hidden');
+            document.getElementById('editor-modal').classList.add('flex');
+            logActivity("Teacher editing announcement.");
+        }
+
+        function saveAnnouncement() {
+            currentAnnouncement = document.getElementById('announcement-input').value.trim() || "No live announcements at this time.";
+            updateAnnouncementDisplay();
+            closeModal();
+            logActivity("Announcement updated in-session.");
+        }
+
 
         function manageExam() {
             document.getElementById('modal-title').textContent = 'Manage Exam Questions';
             document.getElementById('modal-save-btn').onclick = saveExamData;
 
-            let html = '<p class="text-sm text-gray-600 mb-4">Edit questions and options. The correct answer index (0, 1, 2, or 3) should be entered in the box.</p>';
+            let html = '<p class="text-sm text-gray-600 mb-4 dark:text-gray-300">Edit questions and options. The correct answer index (0, 1, 2, or 3) should be entered in the box.</p>';
             examData.forEach((q, qIndex) => {
                 html += `
-                    <div class="p-3 border border-red-300 rounded-lg bg-white shadow-sm mb-4">
-                        <label class="block text-sm font-semibold text-red-700">Q${qIndex + 1} Question</label>
-                        <textarea id="q-${qIndex}-text" rows="2" class="mt-1 block w-full rounded-md border-gray-300 p-2 border">${q.question}</textarea>
+                    <div class="p-3 border border-red-300 rounded-lg bg-white shadow-sm mb-4 dark:bg-gray-700 dark:border-red-600">
+                        <label class="block text-sm font-semibold text-red-700 dark:text-red-400">Q${qIndex + 1} Question</label>
+                        <textarea id="q-${qIndex}-text" rows="2" class="mt-1 block w-full rounded-md border-gray-300 p-2 border dark:bg-gray-800 dark:border-gray-600 dark:text-white">${q.question}</textarea>
 
                         <div class="mt-2 grid grid-cols-2 gap-2">
                             ${q.options.map((opt, oIndex) => `
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-600">Option ${oIndex + 1}</label>
-                                    <input type="text" id="q-${qIndex}-opt-${oIndex}" value="${opt}" class="w-full rounded-md border-gray-300 p-1 border text-sm">
+                                    <label class="block text-xs font-medium text-gray-600 dark:text-gray-400">Option ${oIndex + 1}</label>
+                                    <input type="text" id="q-${qIndex}-opt-${oIndex}" value="${opt}" class="w-full rounded-md border-gray-300 p-1 border text-sm dark:bg-gray-800 dark:border-gray-600 dark:text-white">
                                 </div>
                             `).join('')}
                         </div>
 
-                        <label class="block text-sm font-semibold text-green-700 mt-3">Correct Answer Index (0-3)</label>
-                        <input type="number" id="q-${qIndex}-answer" value="${q.answer}" min="0" max="3" class="w-20 rounded-md border-green-300 p-1 border font-bold text-lg">
+                        <label class="block text-sm font-semibold text-green-700 mt-3 dark:text-green-400">Correct Answer Index (0-3)</label>
+                        <input type="number" id="q-${qIndex}-answer" value="${q.answer}" min="0" max="3" class="w-20 rounded-md border-green-300 p-1 border font-bold text-lg dark:bg-gray-800 dark:border-green-600 dark:text-white">
                     </div>
                 `;
             });
@@ -414,11 +694,10 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
             document.getElementById('modal-content-area').innerHTML = html;
             document.getElementById('editor-modal').classList.remove('hidden');
             document.getElementById('editor-modal').classList.add('flex');
+            logActivity("Teacher reviewing exam questions.");
         }
 
         function saveExamData() {
-            // This is a simplified function and relies on the number of questions not changing
-            // and the inputs being valid (Teacher's responsibility).
             examData.forEach((q, qIndex) => {
                 q.question = document.getElementById(`q-${qIndex}-text`).value;
                 q.options[0] = document.getElementById(`q-${qIndex}-opt-0`).value;
@@ -429,23 +708,24 @@ Stacks and Queues are abstract data types (ADTs). A Stack follows the Last In, F
             });
             loadTeacherView();
             closeModal();
+            logActivity("Exam questions updated in-session.");
         }
 
-
-        // --- Utility ---
-
-        function closeModal() {
-            document.getElementById('editor-modal').classList.add('hidden');
-            document.getElementById('editor-modal').classList.remove('flex');
-        }
 
         // Initial setup on load
         window.onload = function() {
-            // Check if a role was already set (e.g., if user refreshes)
-            // For a single-session, non-db app, we default to showing the selection
+            document.getElementById('modal-save-btn').onclick = function() {
+                // The actual save function is set when the modal opens (e.g., in editLesson)
+            }
+            logActivity("Application loaded.");
+
             showRoleSelection();
         };
 
+        // Bind scroll event globally to body
+        document.addEventListener('scroll', updateScrollProgress);
+        window.addEventListener('resize', updateScrollProgress);
+        
     </script>
 </body>
 </html>
